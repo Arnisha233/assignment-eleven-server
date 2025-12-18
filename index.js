@@ -71,6 +71,28 @@ async function run() {
       const result = await gramentsCollection.find().toArray();
       res.send(result);
     });
+    // app.get("/all-product", async (req, res) => {
+    //   try {
+    //     const page = parseInt(req.query.page) || 1;
+    //     const limit = parseInt(req.query.limit) || 6; // ✅ 2 products per page
+    //     const skip = (page - 1) * limit;
+
+    //     const products = await gramentsCollection
+    //       .find()
+    //       .skip(skip)
+    //       .limit(limit)
+    //       .toArray();
+
+    //     const totalProducts = await gramentsCollection.countDocuments();
+
+    //     res.send({
+    //       products,
+    //       totalProducts,
+    //     });
+    //   } catch (error) {
+    //     res.status(500).send({ message: "Server error" });
+    //   }
+    // });
 
     app.get("/all-product/:id", async (req, res) => {
       const id = req.params.id;
@@ -78,6 +100,17 @@ async function run() {
         _id: new ObjectId(id),
       });
       res.send(result);
+    });
+
+    // get 6 data on home
+    app.get("/six-card", async (req, res) => {
+      try {
+        const result = await gramentsCollection.find().limit(6).toArray();
+
+        res.send(result);
+      } catch (error) {
+        res.status(500).send({ message: "Failed to fetch products" });
+      }
     });
 
     // delete order
@@ -90,6 +123,33 @@ async function run() {
         success: true,
         result,
       });
+    });
+
+    // Update a product by id
+    app.patch("/all-product/:id", async (req, res) => {
+      try {
+        const id = req.params.id;
+        const updatedData = req.body;
+
+        const result = await gramentsCollection.updateOne(
+          { _id: new ObjectId(id) },
+          { $set: updatedData }
+        );
+
+        if (result.modifiedCount > 0) {
+          res.send({
+            success: true,
+            message: "Product updated successfully ✅",
+          });
+        } else {
+          res.send({ success: false, message: "No product updated ❌" });
+        }
+      } catch (error) {
+        console.error(error);
+        res
+          .status(500)
+          .send({ success: false, message: "Server error ❌", error });
+      }
     });
 
     // payment endpoint
@@ -146,6 +206,7 @@ async function run() {
           quantity: 1,
           price: session.amount_total / 100,
           image: product?.image,
+          createdAt: new Date(),
           // tracking: [
           //   {
           //     date: new Date().toISOString(),
@@ -248,6 +309,7 @@ async function run() {
       userData.created_at = new Date().toISOString();
       userData.last_loggedIn = new Date().toISOString();
       userData.role = "customer";
+      userData.status = "pending";
 
       const query = {
         email: userData.email,
@@ -295,6 +357,92 @@ async function run() {
         { $set: { role: role } }
       );
       // await sellerRequestsCollection.deleteOne({ email });
+      res.send(result);
+    });
+
+    // backend: update user status
+    app.patch("/update-status", verifyJWT, async (req, res) => {
+      const { email, status } = req.body;
+      try {
+        const result = await usersCollection.updateOne(
+          { email },
+          { $set: { status } }
+        );
+        res.send({ success: true, result });
+      } catch (err) {
+        res.status(500).send({ success: false, message: err.message });
+      }
+    });
+
+    // pending order
+    app.get("/pending-orders", async (req, res) => {
+      try {
+        // শুধুমাত্র status === "pending" order গুলো fetch
+        const pendingOrders = await ordersCollection
+          .find({ status: "pending" })
+          .toArray();
+
+        res.send(pendingOrders);
+      } catch (error) {
+        console.error(error);
+        res.status(500).send({ message: "Server Error" });
+      }
+    });
+
+    // approve order
+    // app.patch("/orders/approve/:id", async (req, res) => {
+    //   const id = req.params.id;
+
+    //   const result = await ordersCollection.updateOne(
+    //     { _id: new ObjectId(id) },
+    //     {
+    //       $set: {
+    //         status: "Approved",
+    //         approvedAt: new Date(),
+    //       },
+    //     }
+    //   );
+
+    //   res.send(result);
+    // });
+    app.get("/approved-orders", async (req, res) => {
+      try {
+        const orders = await ordersCollection
+          .find({ status: "Approved" })
+          .toArray();
+        res.send(orders);
+      } catch (err) {
+        res.status(500).send({ message: "Server error" });
+      }
+    });
+
+    // single trackin order
+    app.get("/orders/track/:id", async (req, res) => {
+      const { id } = req.params;
+
+      if (!ObjectId.isValid(id)) {
+        return res.status(400).json({ error: "Invalid order ID" });
+      }
+
+      const result = await ordersCollection.findOne({
+        _id: new ObjectId(id),
+      });
+      res.send(result);
+    });
+
+    // reject order
+    app.patch("/orders/reject/:id", async (req, res) => {
+      const id = req.params.id;
+
+      const result = await ordersCollection.updateOne(
+        { _id: new ObjectId(id) },
+        {
+          $set: {
+            status: "Rejected",
+          },
+        }
+      );
+
       res.send(result);
     });
 
