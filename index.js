@@ -16,9 +16,18 @@ const port = 3000;
 
 // middleware
 app.use(
+  // cors({
+  //   // origin: [process.env.CLIENT_DOMAIN],
+  //   origin: "https://velvety-malabi-6501ea.netlify.app",
+  //   credentials: true,
+  //   optionSuccessStatus: 200,
+  // })
   cors({
-    // origin: [process.env.CLIENT_DOMAIN],
-    origin: "http://localhost:5173",
+    origin: [
+      "https://velvety-malabi-6501ea.netlify.app", // আপনার লাইভ সাইট
+      "http://localhost:5173", // আপনার লোকালহোস্ট (Vite default)
+      "http://localhost:5174", // অনেক সময় পোর্ট পরিবর্তন হলে কাজে দেবে
+    ],
     credentials: true,
     optionSuccessStatus: 200,
   })
