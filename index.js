@@ -22,7 +22,7 @@ app.use(
       "https://harmonious-brioche-3f4d22.netlify.app",
     ],
     credentials: true,
-    optionsSuccessStatus: 200,
+    optionSuccessStatus: 200,
   })
 );
 app.use(express.json());
@@ -469,10 +469,6 @@ run().catch(console.dir);
 app.get("/", (req, res) => {
   res.send("server is runnin fine!");
 });
-
-// app.listen(port, () => {
-//   console.log(`Server is running on port ${port}`);
-// });
 
 if (process.env.NODE_ENV !== "production") {
   app.listen(port, () => {
